@@ -1,0 +1,13 @@
+roll_number,name,class_name,subject,marks_obtained,total_marks,semester
+STU001,John Doe,Class 10,Mathematics,85,100,Semester 1
+STU001,John Doe,Class 10,Science,78,100,Semester 1
+STU001,John Doe,Class 10,English,92,100,Semester 1
+STU002,Jane Smith,Class 10,Mathematics,92,100,Semester 1
+STU002,Jane Smith,Class 10,Science,88,100,Semester 1
+STU002,Jane Smith,Class 10,English,95,100,Semester 1
+STU003,Alex Johnson,Class 11,Mathematics,76,100,Semester 1
+STU003,Alex Johnson,Class 11,Science,82,100,Semester 1
+STU003,Alex Johnson,Class 11,English,89,100,Semester 1
+STU004,Sarah Williams,Class 11,Mathematics,94,100,Semester 1
+STU004,Sarah Williams,Class 11,Science,91,100,Semester 1
+STU004,Sarah Williams,Class 11,English,87,100,Semester 1 

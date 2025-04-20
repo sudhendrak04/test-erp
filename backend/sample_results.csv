@@ -1,0 +1,11 @@
+student_roll_number,subject,marks_obtained,total_marks,semester
+A001,Mathematics,85,100,Semester 1
+A001,Science,92,100,Semester 1
+A002,Mathematics,78,100,Semester 1
+A002,Science,88,100,Semester 1
+A003,Mathematics,95,100,Semester 1
+A003,Science,90,100,Semester 1
+A004,Mathematics,82,100,Semester 1
+A004,Science,85,100,Semester 1
+A005,Mathematics,88,100,Semester 1
+A005,Science,92,100,Semester 1 
