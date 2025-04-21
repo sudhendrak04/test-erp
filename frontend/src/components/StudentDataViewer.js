@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Paper,
   Alert,
+  Input,
 } from '@mui/material';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -14,109 +15,76 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
 
 function StudentDataViewer() {
   const [data, setData] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [columnDefs, setColumnDefs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [gridApi, setGridApi] = useState(null);
   const [changed, setChanged] = useState(false);
+  const [fileUploaded, setFileUploaded] = useState(false);
 
-  useEffect(() => {
-    // Define dummy data with the exact columns from sample_student_data.xlsx
-    const sampleData = [
-      {
-        "S.No": 1,
-        "Roll Number": "STU001",
-        "Name": "John Doe",
-        "Date of Birth": "2001-05-15",
-        "Gender": "Male",
-        "Email": "john.doe@example.com",
-        "Phone": "1234567890",
-        "Address": "123 Main St, City",
-        "Department": "Computer Science",
-        "Batch": "2022-2026",
-        "CGPA": 8.5
-      },
-      {
-        "S.No": 2,
-        "Roll Number": "STU002",
-        "Name": "Jane Smith",
-        "Date of Birth": "2002-07-20",
-        "Gender": "Female",
-        "Email": "jane.smith@example.com",
-        "Phone": "9876543210",
-        "Address": "456 Park Ave, Town",
-        "Department": "Electrical Engineering",
-        "Batch": "2022-2026",
-        "CGPA": 9.2
-      },
-      {
-        "S.No": 3,
-        "Roll Number": "STU003",
-        "Name": "Alex Johnson",
-        "Date of Birth": "2001-11-03",
-        "Gender": "Male",
-        "Email": "alex.j@example.com",
-        "Phone": "5551234567",
-        "Address": "789 Oak Dr, Village",
-        "Department": "Mechanical Engineering",
-        "Batch": "2022-2026",
-        "CGPA": 7.8
-      },
-      {
-        "S.No": 4,
-        "Roll Number": "STU004",
-        "Name": "Sarah Williams",
-        "Date of Birth": "2002-03-27",
-        "Gender": "Female",
-        "Email": "sarah.w@example.com",
-        "Phone": "4567891230",
-        "Address": "321 Pine St, County",
-        "Department": "Information Technology",
-        "Batch": "2022-2026",
-        "CGPA": 8.9
-      },
-      {
-        "S.No": 5,
-        "Roll Number": "STU005",
-        "Name": "Michael Brown",
-        "Date of Birth": "2001-09-12",
-        "Gender": "Male",
-        "Email": "michael.b@example.com",
-        "Phone": "7891234560",
-        "Address": "654 Elm St, District",
-        "Department": "Civil Engineering",
-        "Batch": "2022-2026",
-        "CGPA": 8.3
-      }
-    ];
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    // Create column definitions based on the sample data
-    const columns = Object.keys(sampleData[0]).map(key => ({
-      headerName: key,
-      field: key,
-      sortable: true,
-      filter: true,
-      editable: params => editMode,
-      // Set numeric type for number columns
-      ...(["S.No", "CGPA"].includes(key) ? { type: 'numericColumn' } : {}),
-      // Set width for certain columns
-      ...(key === "S.No" ? { width: 80, maxWidth: 100 } : {}),
-      ...(key === "Roll Number" ? { width: 150 } : {}),
-      ...(key === "Name" ? { width: 200 } : {}),
-      ...(key === "Address" ? { minWidth: 250 } : {}),
-    }));
+    setLoading(true);
+    const reader = new FileReader();
     
-    setColumnDefs(columns);
-    setData(sampleData);
-    setOriginalData(JSON.parse(JSON.stringify(sampleData)));
-    setLoading(false);
-  }, []);
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get the first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (jsonData.length === 0) {
+          setError('No data found in the uploaded file');
+          setLoading(false);
+          return;
+        }
+        
+        // Create column definitions based on the uploaded data
+        const columns = Object.keys(jsonData[0]).map(key => ({
+          headerName: key,
+          field: key,
+          sortable: true,
+          filter: true,
+          editable: params => editMode,
+          // Try to detect numeric columns
+          ...(typeof jsonData[0][key] === 'number' ? { type: 'numericColumn' } : {}),
+        }));
+        
+        setColumnDefs(columns);
+        setData(jsonData);
+        setOriginalData(JSON.parse(JSON.stringify(jsonData)));
+        setFileUploaded(true);
+        setError(null);
+      } catch (err) {
+        console.error('Error processing Excel file:', err);
+        setError('Failed to process Excel file: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    reader.onerror = () => {
+      setError('Error reading file');
+      setLoading(false);
+    };
+    
+    reader.readAsArrayBuffer(file);
+  };
 
   const defaultColDef = {
     flex: 1,
@@ -181,49 +149,76 @@ function StudentDataViewer() {
         Student Data Viewer
       </Typography>
       
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
         <Button
           variant="contained"
-          color={editMode ? "success" : "secondary"}
-          onClick={toggleEditMode}
-          startIcon={editMode ? <SaveIcon /> : <EditIcon />}
+          component="label"
+          startIcon={<UploadFileIcon />}
         >
-          {editMode ? "Exit Edit Mode" : "Enable Cell Editing"}
+          Upload Excel File
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            hidden
+            onChange={handleFileUpload}
+          />
         </Button>
-        {editMode && (
-          <>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSaveChanges}
-              startIcon={<SaveIcon />}
-              disabled={!changed}
-            >
-              Save Changes
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={handleResetChanges}
-            >
-              Reset Changes
-            </Button>
-          </>
-        )}
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={exportToExcel}
-          startIcon={<FileDownloadIcon />}
-        >
-          Download Excel
-        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {fileUploaded && (
+            <>
+              <Button
+                variant="contained"
+                color={editMode ? "success" : "secondary"}
+                onClick={toggleEditMode}
+                startIcon={editMode ? <SaveIcon /> : <EditIcon />}
+              >
+                {editMode ? "Exit Edit Mode" : "Enable Cell Editing"}
+              </Button>
+              {editMode && (
+                <>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSaveChanges}
+                    startIcon={<SaveIcon />}
+                    disabled={!changed}
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleResetChanges}
+                  >
+                    Reset Changes
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={exportToExcel}
+                startIcon={<FileDownloadIcon />}
+                disabled={data.length === 0}
+              >
+                Download Excel
+              </Button>
+            </>
+          )}
+        </Box>
       </Box>
       
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" sx={{ mb: 2 }}>
-          Student Data {editMode && <span style={{ color: 'green', fontSize: '0.8em' }}>(Edit Mode Enabled - Click cells to edit)</span>}
-          {changed && <span style={{ color: 'orange', fontSize: '0.8em', marginLeft: '10px' }}>(Unsaved Changes)</span>}
+          {fileUploaded ? (
+            <>
+              Student Data {editMode && <span style={{ color: 'green', fontSize: '0.8em' }}>(Edit Mode Enabled - Click cells to edit)</span>}
+              {changed && <span style={{ color: 'orange', fontSize: '0.8em', marginLeft: '10px' }}>(Unsaved Changes)</span>}
+            </>
+          ) : (
+            <>Please upload an Excel file to view student data</>
+          )}
         </Typography>
         
         {error && (
@@ -236,9 +231,13 @@ function StudentDataViewer() {
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <CircularProgress />
           </Box>
+        ) : !fileUploaded ? (
+          <Alert severity="info">
+            No file uploaded yet. Please upload an Excel file with student data.
+          </Alert>
         ) : data.length === 0 ? (
           <Alert severity="info">
-            No student data found.
+            No student data found in the uploaded file.
           </Alert>
         ) : (
           <div className="ag-theme-alpine" style={{ height: 600, width: '100%' }}>
@@ -248,12 +247,9 @@ function StudentDataViewer() {
               defaultColDef={defaultColDef}
               animateRows={true}
               pagination={true}
-              paginationPageSize={15}
-              onCellValueChanged={handleCellValueChanged}
-              stopEditingWhenCellsLoseFocus={true}
+              paginationPageSize={10}
               onGridReady={onGridReady}
-              suppressClickEdit={!editMode}
-              editType="fullRow"
+              onCellValueChanged={handleCellValueChanged}
             />
           </div>
         )}
