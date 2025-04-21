@@ -25,6 +25,9 @@ function Navbar() {
           <Button color="inherit" component={RouterLink} to="/csv-viewer">
             CSV Viewer
           </Button>
+          <Button color="inherit" component={RouterLink} to="/student-data">
+            Excel Editor
+          </Button>
         </Toolbar>
       </Container>
     </AppBar>

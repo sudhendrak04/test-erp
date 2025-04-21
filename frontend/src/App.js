@@ -8,6 +8,7 @@ import StudentForm from './components/StudentForm';
 import ResultList from './components/ResultList';
 import ResultForm from './components/ResultForm';
 import CsvViewer from './components/CsvViewer';
+import StudentDataViewer from './components/StudentDataViewer';
 import './styles/ag-grid-theme.css';
 
 const theme = createTheme({
@@ -37,6 +38,7 @@ function App() {
           <Route path="/results/new" element={<ResultForm />} />
           <Route path="/results/:id/edit" element={<ResultForm />} />
           <Route path="/csv-viewer" element={<CsvViewer />} />
+          <Route path="/student-data" element={<StudentDataViewer />} />
         </Routes>
       </Router>
     </ThemeProvider>
